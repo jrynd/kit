@@ -14,7 +14,7 @@ import (
 // Counter implements Counter, via a Prometheus CounterVec.
 type Counter struct {
 	cv  *prometheus.CounterVec
-	lvs lv.LabelValues
+	lvs prometheus.Labels
 }
 
 // NewCounterFrom constructs and registers a Prometheus CounterVec,
@@ -36,19 +36,19 @@ func NewCounter(cv *prometheus.CounterVec) *Counter {
 func (c *Counter) With(labelValues ...string) metrics.Counter {
 	return &Counter{
 		cv:  c.cv,
-		lvs: c.lvs.With(labelValues...),
+		lvs: makeLabels(c.lvs,labelValues),
 	}
 }
 
 // Add implements Counter.
 func (c *Counter) Add(delta float64) {
-	c.cv.With(makeLabels(c.lvs...)).Add(delta)
+	c.cv.With(c.lvs).Add(delta)
 }
 
 // Gauge implements Gauge, via a Prometheus GaugeVec.
 type Gauge struct {
 	gv  *prometheus.GaugeVec
-	lvs lv.LabelValues
+	lvs prometheus.Labels
 }
 
 // NewGaugeFrom constructs and registers a Prometheus GaugeVec,
@@ -70,18 +70,18 @@ func NewGauge(gv *prometheus.GaugeVec) *Gauge {
 func (g *Gauge) With(labelValues ...string) metrics.Gauge {
 	return &Gauge{
 		gv:  g.gv,
-		lvs: g.lvs.With(labelValues...),
+		lvs: makeLabels(g.lvs,labelValues),
 	}
 }
 
 // Set implements Gauge.
 func (g *Gauge) Set(value float64) {
-	g.gv.With(makeLabels(g.lvs...)).Set(value)
+	g.gv.With(g.lvs).Set(value)
 }
 
 // Add is supported by Prometheus GaugeVecs.
 func (g *Gauge) Add(delta float64) {
-	g.gv.With(makeLabels(g.lvs...)).Add(delta)
+	g.gv.With(g.lvs).Add(delta)
 }
 
 // Summary implements Histogram, via a Prometheus SummaryVec. The difference
@@ -89,7 +89,7 @@ func (g *Gauge) Add(delta float64) {
 // quantile buckets, but cannot be statistically aggregated.
 type Summary struct {
 	sv  *prometheus.SummaryVec
-	lvs lv.LabelValues
+	lvs prometheus.Labels
 }
 
 // NewSummaryFrom constructs and registers a Prometheus SummaryVec,
@@ -111,13 +111,13 @@ func NewSummary(sv *prometheus.SummaryVec) *Summary {
 func (s *Summary) With(labelValues ...string) metrics.Histogram {
 	return &Summary{
 		sv:  s.sv,
-		lvs: s.lvs.With(labelValues...),
+		lvs: makeLabels(s.lvs,labelValues),
 	}
 }
 
 // Observe implements Histogram.
 func (s *Summary) Observe(value float64) {
-	s.sv.With(makeLabels(s.lvs...)).Observe(value)
+	s.sv.With(s.lvs).Observe(value)
 }
 
 // Histogram implements Histogram via a Prometheus HistogramVec. The difference
@@ -125,7 +125,7 @@ func (s *Summary) Observe(value float64) {
 // quantile buckets, and can be statistically aggregated.
 type Histogram struct {
 	hv  *prometheus.HistogramVec
-	lvs lv.LabelValues
+	lvs prometheus.Labels
 }
 
 // NewHistogramFrom constructs and registers a Prometheus HistogramVec,
@@ -147,13 +147,13 @@ func NewHistogram(hv *prometheus.HistogramVec) *Histogram {
 func (h *Histogram) With(labelValues ...string) metrics.Histogram {
 	return &Histogram{
 		hv:  h.hv,
-		lvs: h.lvs.With(labelValues...),
+		lvs: makeLabels(h.lvs,labelValues),
 	}
 }
 
 // Observe implements Histogram.
 func (h *Histogram) Observe(value float64) {
-	h.hv.With(makeLabels(h.lvs...)).Observe(value)
+	h.hv.With(h.lvs).Observe(value)
 }
 
 func makeLabels(labelValues ...string) prometheus.Labels {
